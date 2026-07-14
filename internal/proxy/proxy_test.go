@@ -483,3 +483,34 @@ func TestSecretsNeverPersistedInLedger(t *testing.T) {
 		}
 	}
 }
+
+const ollamaNDJSON = "{\"model\":\"llama3.2\",\"message\":{\"role\":\"assistant\",\"content\":\"Hello\"},\"done\":false}\n{\"model\":\"llama3.2\",\"message\":{\"role\":\"assistant\",\"content\":\" from\"},\"done\":false}\n{\"model\":\"llama3.2\",\"message\":{\"role\":\"assistant\",\"content\":\" Ollama\"},\"done\":true,\"prompt_eval_count\":10,\"eval_count\":3}\n"
+
+func ndjsonHandler(payload string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/x-ndjson")
+		w.WriteHeader(http.StatusOK)
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+		_, _ = io.WriteString(w, payload)
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+	}
+}
+
+func TestOllamaNDJSONStreamingTeesUnmodifiedAndMeters(t *testing.T) {
+	h := newHarness(t, policy.Limits{MaxCalls: 100}, nil, true, ndjsonHandler(ollamaNDJSON))
+	resp, body := h.do("/api/chat", nil, `{"model":"llama3.2","messages":[{"role":"user","content":"hi"}]}`)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	if body != ollamaNDJSON {
+		t.Fatalf("client stream was modified:\n got %q\nwant %q", body, ollamaNDJSON)
+	}
+	s := h.loadState("default")
+	if s.InputTokens != 10 || s.OutputTokens != 3 {
+		t.Fatalf("ndjson streamed usage = (%d,%d), want (10,3)", s.InputTokens, s.OutputTokens)
+	}
+}

@@ -279,3 +279,28 @@ func TestInjectIncludeUsageInvalidJSON(t *testing.T) {
 		t.Fatalf("invalid JSON body should be returned unmodified")
 	}
 }
+
+func TestIsStreamed(t *testing.T) {
+	tests := []struct {
+		name        string
+		contentType string
+		want        bool
+	}{
+		{"sse", "text/event-stream", true},
+		{"sse with charset", "text/event-stream; charset=utf-8", true},
+		{"sse with padding", " text/event-stream ", true},
+		{"ndjson", "application/x-ndjson", true},
+		{"ndjson with charset", "application/x-ndjson; charset=utf-8", true},
+		{"ndjson uppercase", "APPLICATION/X-NDJSON", true},
+		{"plain json", "application/json", false},
+		{"empty", "", false},
+		{"html", "text/html", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsStreamed(tt.contentType); got != tt.want {
+				t.Fatalf("IsStreamed(%q) = %v, want %v", tt.contentType, got, tt.want)
+			}
+		})
+	}
+}

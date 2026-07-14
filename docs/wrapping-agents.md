@@ -35,7 +35,7 @@ When you run the wrapper, leash:
 1. Binds a free port on `127.0.0.1` (it asks the OS for `127.0.0.1:0`), so the
    proxy never leaves your machine.
 2. Starts the embedded enforcement proxy on that port in the background.
-3. Builds the child's environment from your own (`os.Environ`) plus the three
+3. Builds the child's environment from your own (`os.Environ`) plus the
    provider base-url variables below.
 4. Execs the child command, wiring its stdin, stdout, and stderr straight
    through to leash's own - the agent's output is unchanged.

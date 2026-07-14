@@ -366,9 +366,10 @@ numbers only. Reproduce with `make bench`.
 leash keys on the wire *format*, not the model name, so a new model version needs
 no code change (add a price-table row) and any endpoint speaking a format leash
 knows is governed. "OpenAI-compatible" is the ecosystem's common tongue, so that
-one format already covers **Gemini and Ollama** (through their OpenAI-compatible
-endpoints), OpenRouter, Groq, Together, vLLM, and more. leash reads usage from
-real responses, in three formats and both shapes:
+one format already covers **Gemini** (through its OpenAI-compatible endpoint),
+OpenRouter, Groq, Together, vLLM, and more. leash also reads the native wire
+formats of Anthropic, Gemini, and Ollama. It reads usage from real responses, in
+four wire formats and both shapes:
 
 - **OpenAI-compatible:** non-streaming `usage.prompt_tokens` /
   `completion_tokens` / `completion_tokens_details.reasoning_tokens`. Streaming
@@ -381,6 +382,9 @@ real responses, in three formats and both shapes:
   `candidatesTokenCount` / `thoughtsTokenCount` / `cachedContentTokenCount`, with
   a cumulative `usageMetadata` on the SSE stream. Gemini's OpenAI-compatible
   endpoint is metered as OpenAI.
+- **Ollama** (native `/api/chat` and `/api/generate`): `prompt_eval_count` /
+  `eval_count` on the final NDJSON chunk. Gateway mode only; pass `--upstream`
+  to point at a running Ollama instance (e.g. `--upstream http://localhost:11434`).
 
 For streaming OpenAI requests, leash rewrites the body to set
 `stream_options.include_usage=true` so the final chunk reports usage; turn it off
